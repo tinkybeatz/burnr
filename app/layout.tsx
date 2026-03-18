@@ -15,8 +15,8 @@ const dmMono = DM_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Incline Walk Calculator',
-  description: 'Treadmill incline walk calorie & step estimator',
+  title: 'Burnr — Fitness Calculators',
+  description: 'Simple, accurate fitness calculators. No accounts, no ads — just fast answers.',
 }
 
 export default function RootLayout({

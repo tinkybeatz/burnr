@@ -1,769 +1,182 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
 
-type WeightUnit = 'kg' | 'lbs'
-type HeightUnit = 'cm' | 'in'
-type DistUnit = 'km' | 'mi'
-type SpeedUnit = 'kmh' | 'ms'
-type Mode = 'distance' | 'time'
+const tools = [
+  {
+    href: '/incline-walk',
+    tag: 'Calculator',
+    name: 'Incline Walk',
+    description: 'Estimate calories burned and steps taken during a treadmill incline walk. Supports distance or time mode.',
+    stats: ['Calories', 'Steps', 'Duration', 'Speed'],
+  },
+]
 
-interface Results {
-  calories: number
-  steps: number
-  durationMin: number
-  speedKmh: number
-  speedMs: number
-  displayDist: string
-  distUnit: DistUnit
-}
-
-function toKmh(val: number, unit: SpeedUnit): number {
-  return unit === 'ms' ? val * 3.6 : val
-}
-
-export default function Page() {
-  const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg')
-  const [heightUnit, setHeightUnit] = useState<HeightUnit>('cm')
-  const [distUnit, setDistUnit] = useState<DistUnit>('km')
-  const [speedUnit, setSpeedUnit] = useState<SpeedUnit>('kmh')
-  const [speedTimeUnit, setSpeedTimeUnit] = useState<SpeedUnit>('kmh')
-  const [mode, setMode] = useState<Mode>('distance')
-  const [results, setResults] = useState<Results | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [calcKey, setCalcKey] = useState(0)
-
-  // Form field values
-  const [weight, setWeight] = useState('')
-  const [height, setHeight] = useState('')
-  const [incline, setIncline] = useState('')
-  const [distance, setDistance] = useState('')
-  const [speed, setSpeed] = useState('')
-  const [timeMins, setTimeMins] = useState('')
-  const [speedTime, setSpeedTime] = useState('')
-
-  const calculate = useCallback(() => {
-    setError(null)
-    let weightKg = parseFloat(weight)
-    let heightCm = parseFloat(height)
-    const inclineVal = parseFloat(incline) || 0
-
-    if (!weightKg || !heightCm) {
-      setError('Please enter weight and height.')
-      return
-    }
-
-    if (weightUnit === 'lbs') weightKg *= 0.453592
-    if (heightUnit === 'in') heightCm *= 2.54
-
-    const inclineFactor = 1 - inclineVal * 0.004
-    const strideLengthM = 0.413 * (heightCm / 100) * inclineFactor
-
-    let distanceKm: number
-    let durationMin: number
-    let speedKmh: number
-
-    if (mode === 'distance') {
-      let dist = parseFloat(distance)
-      const spd = parseFloat(speed)
-      if (!dist || !spd) {
-        setError('Please enter distance and speed.')
-        return
-      }
-      if (distUnit === 'mi') dist *= 1.60934
-      speedKmh = toKmh(spd, speedUnit)
-      distanceKm = dist
-      durationMin = (distanceKm / speedKmh) * 60
-    } else {
-      durationMin = parseFloat(timeMins)
-      const spd = parseFloat(speedTime)
-      if (!durationMin || !spd) {
-        setError('Please enter duration and speed.')
-        return
-      }
-      speedKmh = toKmh(spd, speedTimeUnit)
-      distanceKm = (speedKmh * durationMin) / 60
-    }
-
-    const speedMmin = (speedKmh * 1000) / 60
-    const metRaw =
-      (speedMmin * 0.1 + (inclineVal / 100) * speedMmin * 1.8 + 3.5) / 3.5
-    const MET = Math.max(2.5, metRaw)
-
-    const calories = Math.round(MET * weightKg * (durationMin / 60))
-    const steps = Math.round((distanceKm * 1000) / strideLengthM)
-
-    const displayDist =
-      distUnit === 'mi'
-        ? (distanceKm / 1.60934).toFixed(2)
-        : distanceKm.toFixed(2)
-
-    setResults({
-      calories,
-      steps,
-      durationMin: Math.round(durationMin),
-      speedKmh,
-      speedMs: speedKmh / 3.6,
-      displayDist,
-      distUnit,
-    })
-    setCalcKey((k) => k + 1)
-  }, [
-    weight, height, incline, distance, speed, timeMins, speedTime,
-    weightUnit, heightUnit, distUnit, speedUnit, speedTimeUnit, mode,
-  ])
-
+export default function Home() {
   return (
     <main
       style={{ fontFamily: 'var(--font-dm-mono), monospace' }}
-      className="min-h-screen flex flex-col items-center px-4 py-10 pb-16"
+      className="min-h-screen flex flex-col items-center px-4 py-10 pb-20"
     >
-      {/* Header */}
-      <header className="text-center mb-10">
-        <h1
-          style={{
-            fontFamily: 'var(--font-bebas), sans-serif',
-            fontSize: 'clamp(48px, 10vw, 88px)',
-            letterSpacing: '0.04em',
-            color: 'var(--accent)',
-            lineHeight: 0.9,
-            textShadow: '0 0 40px rgba(200,241,53,0.3)',
-          }}
-        >
-          INCLINE<br />WALK
-        </h1>
+      {/* Logo + intro */}
+      <header className="flex flex-col items-center mb-14" style={{ maxWidth: 520, textAlign: 'center' }}>
+        <Image
+          src="/burnr-logo.svg"
+          alt="burnr"
+          width={160}
+          height={48}
+          priority
+          style={{ display: 'block' }}
+        />
         <p
           style={{
             fontSize: 11,
             letterSpacing: '0.3em',
             color: 'var(--muted)',
             textTransform: 'uppercase',
-            marginTop: 8,
+            marginTop: 12,
           }}
         >
-          Treadmill Calculator
+          Fitness calculators
+        </p>
+        <p
+          style={{
+            fontSize: 13,
+            color: 'var(--muted)',
+            lineHeight: 1.8,
+            letterSpacing: '0.03em',
+            marginTop: 20,
+            borderTop: '1px solid var(--border)',
+            paddingTop: 20,
+          }}
+        >
+          No accounts. No ads. Just numbers.
+          <br />
+          Burnr is a collection of simple, accurate fitness calculators
+          for people who want fast answers without the fluff.
         </p>
       </header>
 
-      {/* Card */}
+      {/* Tool grid */}
       <div
         style={{
-          background: 'var(--panel)',
-          border: '1px solid var(--border)',
-          borderRadius: 2,
           width: '100%',
-          maxWidth: 520,
+          maxWidth: 800,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: 1,
+          background: 'var(--border)',
         }}
       >
-        {/* Body section */}
-        <SectionLabel>// Body</SectionLabel>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 1,
-            background: 'var(--border)',
-          }}
-        >
-          {/* Weight */}
-          <InputCell>
-            <FieldLabel>Weight</FieldLabel>
-            <div className="flex items-center gap-2">
-              <NumberInput
-                value={weight}
-                onChange={setWeight}
-                placeholder="75"
-                min={30}
-                max={300}
-              />
-              <UnitSpan>{weightUnit}</UnitSpan>
-            </div>
-            <ToggleRow>
-              <ToggleBtn
-                active={weightUnit === 'kg'}
-                onClick={() => setWeightUnit('kg')}
-              >
-                KG
-              </ToggleBtn>
-              <ToggleBtn
-                active={weightUnit === 'lbs'}
-                onClick={() => setWeightUnit('lbs')}
-              >
-                LBS
-              </ToggleBtn>
-            </ToggleRow>
-          </InputCell>
-
-          {/* Height */}
-          <InputCell>
-            <FieldLabel>Height</FieldLabel>
-            <div className="flex items-center gap-2">
-              <NumberInput
-                value={height}
-                onChange={setHeight}
-                placeholder="175"
-                min={100}
-                max={250}
-              />
-              <UnitSpan>{heightUnit}</UnitSpan>
-            </div>
-            <ToggleRow>
-              <ToggleBtn
-                active={heightUnit === 'cm'}
-                onClick={() => setHeightUnit('cm')}
-              >
-                CM
-              </ToggleBtn>
-              <ToggleBtn
-                active={heightUnit === 'in'}
-                onClick={() => setHeightUnit('in')}
-              >
-                IN
-              </ToggleBtn>
-            </ToggleRow>
-          </InputCell>
-        </div>
-
-        {/* Workout section */}
-        <SectionLabel>// Workout</SectionLabel>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 1,
-            background: 'var(--border)',
-          }}
-        >
-          {/* Incline — full width */}
-          <InputCell fullWidth>
-            <FieldLabel>Incline</FieldLabel>
-            <div className="flex items-center gap-2">
-              <NumberInput
-                value={incline}
-                onChange={setIncline}
-                placeholder="8"
-                min={0}
-                max={30}
-                step={0.5}
-              />
-              <UnitSpan>% grade</UnitSpan>
-            </div>
-          </InputCell>
-
-          {/* Mode toggle — full width */}
-          <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 1, background: 'var(--border)' }}>
-            <ModeBtn active={mode === 'distance'} onClick={() => setMode('distance')}>
-              By Distance
-            </ModeBtn>
-            <ModeBtn active={mode === 'time'} onClick={() => setMode('time')}>
-              By Time
-            </ModeBtn>
-          </div>
-
-          {/* Distance mode inputs */}
-          {mode === 'distance' && (
-            <>
-              <InputCell>
-                <FieldLabel>Distance</FieldLabel>
-                <div className="flex items-center gap-2">
-                  <NumberInput
-                    value={distance}
-                    onChange={setDistance}
-                    placeholder="3"
-                    min={0.1}
-                    max={100}
-                    step={0.1}
-                  />
-                  <UnitSpan>{distUnit}</UnitSpan>
-                </div>
-                <ToggleRow>
-                  <ToggleBtn
-                    active={distUnit === 'km'}
-                    onClick={() => setDistUnit('km')}
-                  >
-                    KM
-                  </ToggleBtn>
-                  <ToggleBtn
-                    active={distUnit === 'mi'}
-                    onClick={() => setDistUnit('mi')}
-                  >
-                    MI
-                  </ToggleBtn>
-                </ToggleRow>
-              </InputCell>
-
-              <InputCell>
-                <FieldLabel>Speed</FieldLabel>
-                <div className="flex items-center gap-2">
-                  <NumberInput
-                    value={speed}
-                    onChange={setSpeed}
-                    placeholder="5.5"
-                    min={0.1}
-                    max={50}
-                    step={0.1}
-                  />
-                  <UnitSpan>{speedUnit === 'kmh' ? 'km/h' : 'm/s'}</UnitSpan>
-                </div>
-                <ToggleRow>
-                  <ToggleBtn
-                    active={speedUnit === 'kmh'}
-                    onClick={() => setSpeedUnit('kmh')}
-                  >
-                    KM/H
-                  </ToggleBtn>
-                  <ToggleBtn
-                    active={speedUnit === 'ms'}
-                    onClick={() => setSpeedUnit('ms')}
-                  >
-                    M/S
-                  </ToggleBtn>
-                </ToggleRow>
-              </InputCell>
-            </>
-          )}
-
-          {/* Time mode inputs */}
-          {mode === 'time' && (
-            <>
-              <InputCell fullWidth>
-                <FieldLabel>Duration</FieldLabel>
-                <div className="flex items-center gap-2">
-                  <NumberInput
-                    value={timeMins}
-                    onChange={setTimeMins}
-                    placeholder="45"
-                    min={1}
-                    max={600}
-                  />
-                  <UnitSpan>min</UnitSpan>
-                </div>
-              </InputCell>
-
-              <InputCell fullWidth>
-                <FieldLabel>Speed</FieldLabel>
-                <div className="flex items-center gap-2">
-                  <NumberInput
-                    value={speedTime}
-                    onChange={setSpeedTime}
-                    placeholder="5.5"
-                    min={0.1}
-                    max={50}
-                    step={0.1}
-                  />
-                  <UnitSpan>{speedTimeUnit === 'kmh' ? 'km/h' : 'm/s'}</UnitSpan>
-                </div>
-                <ToggleRow>
-                  <ToggleBtn
-                    active={speedTimeUnit === 'kmh'}
-                    onClick={() => setSpeedTimeUnit('kmh')}
-                  >
-                    KM/H
-                  </ToggleBtn>
-                  <ToggleBtn
-                    active={speedTimeUnit === 'ms'}
-                    onClick={() => setSpeedTimeUnit('ms')}
-                  >
-                    M/S
-                  </ToggleBtn>
-                </ToggleRow>
-              </InputCell>
-            </>
-          )}
-        </div>
-
-        {/* Error */}
-        {error && (
-          <p
-            style={{
-              color: '#ff4d4d',
-              fontSize: 11,
-              letterSpacing: '0.1em',
-              padding: '10px 20px 0',
-            }}
-          >
-            {error}
-          </p>
-        )}
-
-        {/* Calculate button */}
-        <button
-          onClick={calculate}
-          style={{
-            width: 'calc(100% - 40px)',
-            margin: '20px',
-            padding: '16px',
-            fontFamily: 'var(--font-bebas), sans-serif',
-            fontSize: 22,
-            letterSpacing: '0.15em',
-            background: 'var(--accent)',
-            color: '#0d0d0d',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.15s',
-            display: 'block',
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget
-            el.style.background = '#d9ff3f'
-            el.style.transform = 'translateY(-1px)'
-            el.style.boxShadow = '0 6px 20px rgba(200,241,53,0.25)'
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget
-            el.style.background = 'var(--accent)'
-            el.style.transform = 'translateY(0)'
-            el.style.boxShadow = 'none'
-          }}
-          onMouseDown={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)'
-          }}
-        >
-          CALCULATE
-        </button>
+        {tools.map((tool) => (
+          <ToolCard key={tool.href} {...tool} />
+        ))}
       </div>
-
-      {/* Results */}
-      {results && (
-        <div
-          key={calcKey}
-          style={{
-            width: '100%',
-            maxWidth: 520,
-            marginTop: 1,
-          }}
-        >
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 1,
-              background: 'var(--border)',
-            }}
-          >
-            {/* Calories — highlight, full width */}
-            <div
-              className="animate-fade-up delay-1"
-              style={{
-                gridColumn: '1 / -1',
-                background: 'var(--accent-dim)',
-                border: '1px solid rgba(200,241,53,0.2)',
-                padding: 20,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 4,
-              }}
-            >
-              <ResultLabel>Calories Burned</ResultLabel>
-              <div
-                style={{
-                  fontFamily: 'var(--font-bebas), sans-serif',
-                  fontSize: 64,
-                  letterSpacing: '0.03em',
-                  color: 'var(--accent)',
-                  lineHeight: 1,
-                  textShadow: '0 0 30px rgba(200,241,53,0.4)',
-                }}
-              >
-                {results.calories.toLocaleString()}
-              </div>
-              <ResultSub>kcal (estimated)</ResultSub>
-            </div>
-
-            <ResultCell delay={2}>
-              <ResultLabel>Steps</ResultLabel>
-              <ResultValue>{results.steps.toLocaleString()}</ResultValue>
-              <ResultSub>approx.</ResultSub>
-            </ResultCell>
-
-            <ResultCell delay={3}>
-              <ResultLabel>Duration</ResultLabel>
-              <ResultValue>{results.durationMin}</ResultValue>
-              <ResultSub>min</ResultSub>
-            </ResultCell>
-
-            <ResultCell delay={4}>
-              <ResultLabel>Speed</ResultLabel>
-              <ResultValue>{results.speedKmh.toFixed(1)}</ResultValue>
-              <ResultSub>
-                km/h &nbsp;·&nbsp; {results.speedMs.toFixed(2)} m/s
-              </ResultSub>
-            </ResultCell>
-
-            <ResultCell delay={5}>
-              <ResultLabel>Distance</ResultLabel>
-              <ResultValue>{results.displayDist}</ResultValue>
-              <ResultSub>{results.distUnit}</ResultSub>
-            </ResultCell>
-          </div>
-
-          <p
-            style={{
-              fontSize: 10,
-              color: 'var(--muted)',
-              textAlign: 'center',
-              padding: '16px 20px',
-              letterSpacing: '0.05em',
-              lineHeight: 1.6,
-              background: 'var(--panel)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            Estimates use MET values adjusted for incline and speed.<br />
-            Actual results vary by fitness level, terrain, and gait.
-          </p>
-        </div>
-      )}
     </main>
   )
 }
 
-/* ─── Small reusable components ─────────────────────────────────────────── */
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        fontSize: 10,
-        letterSpacing: '0.35em',
-        textTransform: 'uppercase',
-        color: 'var(--muted)',
-        padding: '14px 20px 10px',
-        borderBottom: '1px solid var(--border)',
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-function InputCell({
-  children,
-  fullWidth,
+function ToolCard({
+  href,
+  tag,
+  name,
+  description,
+  stats,
 }: {
-  children: React.ReactNode
-  fullWidth?: boolean
+  href: string
+  tag: string
+  name: string
+  description: string
+  stats: string[]
 }) {
   return (
-    <div
+    <Link
+      href={href}
       style={{
         background: 'var(--panel)',
-        padding: '16px 20px',
+        padding: 24,
         display: 'flex',
         flexDirection: 'column',
-        gap: 6,
-        gridColumn: fullWidth ? '1 / -1' : undefined,
+        gap: 14,
+        textDecoration: 'none',
+        transition: 'background 0.15s',
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLAnchorElement).style.background = '#1a1a1a'
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLAnchorElement).style.background = 'var(--panel)'
       }}
     >
-      {children}
-    </div>
-  )
-}
+      {/* Tag + arrow */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <span
+          style={{
+            fontSize: 9,
+            letterSpacing: '0.35em',
+            textTransform: 'uppercase',
+            color: 'var(--accent)',
+            background: 'var(--accent-dim)',
+            padding: '3px 8px',
+            border: '1px solid rgba(200,241,53,0.2)',
+          }}
+        >
+          {tag}
+        </span>
+        <span style={{ fontSize: 18, color: 'var(--muted)' }}>→</span>
+      </div>
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <label
-      style={{
-        fontSize: 10,
-        letterSpacing: '0.25em',
-        textTransform: 'uppercase',
-        color: 'var(--muted)',
-      }}
-    >
-      {children}
-    </label>
-  )
-}
+      {/* Name */}
+      <div
+        style={{
+          fontFamily: 'var(--font-bebas), sans-serif',
+          fontSize: 36,
+          letterSpacing: '0.04em',
+          color: 'var(--text)',
+          lineHeight: 0.95,
+        }}
+      >
+        {name}
+      </div>
 
-function NumberInput({
-  value,
-  onChange,
-  placeholder,
-  min,
-  max,
-  step,
-}: {
-  value: string
-  onChange: (v: string) => void
-  placeholder: string
-  min?: number
-  max?: number
-  step?: number
-}) {
-  return (
-    <input
-      type="number"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      min={min}
-      max={max}
-      step={step}
-      style={{
-        background: 'transparent',
-        border: 'none',
-        borderBottom: '1px solid var(--border)',
-        color: 'var(--text)',
-        fontFamily: 'var(--font-dm-mono), monospace',
-        fontSize: 22,
-        fontWeight: 500,
-        width: '100%',
-        padding: '4px 0',
-        outline: 'none',
-        transition: 'border-color 0.2s',
-      }}
-      onFocus={(e) => {
-        e.currentTarget.style.borderBottomColor = 'var(--accent)'
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.borderBottomColor = 'var(--border)'
-      }}
-    />
-  )
-}
+      {/* Description */}
+      <p
+        style={{
+          fontSize: 11,
+          color: 'var(--muted)',
+          lineHeight: 1.7,
+          letterSpacing: '0.03em',
+          margin: 0,
+        }}
+      >
+        {description}
+      </p>
 
-function UnitSpan({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      style={{
-        fontSize: 11,
-        color: 'var(--muted)',
-        whiteSpace: 'nowrap',
-        flexShrink: 0,
-      }}
-    >
-      {children}
-    </span>
-  )
-}
-
-function ToggleRow({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>{children}</div>
-  )
-}
-
-function ToggleBtn({
-  children,
-  active,
-  onClick,
-}: {
-  children: React.ReactNode
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        flex: 1,
-        padding: '5px 0',
-        fontFamily: 'var(--font-dm-mono), monospace',
-        fontSize: 10,
-        letterSpacing: '0.2em',
-        textTransform: 'uppercase',
-        cursor: 'pointer',
-        border: active ? '1px solid var(--accent)' : '1px solid var(--border)',
-        background: active ? 'var(--accent)' : 'transparent',
-        color: active ? '#0d0d0d' : 'var(--muted)',
-        fontWeight: active ? 500 : 400,
-        transition: 'all 0.15s',
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
-function ModeBtn({
-  children,
-  active,
-  onClick,
-}: {
-  children: React.ReactNode
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        flex: 1,
-        padding: '10px',
-        fontFamily: 'var(--font-dm-mono), monospace',
-        fontSize: 10,
-        letterSpacing: '0.3em',
-        textTransform: 'uppercase',
-        cursor: 'pointer',
-        border: 'none',
-        background: active ? 'var(--accent-dim)' : 'var(--panel)',
-        color: active ? 'var(--accent)' : 'var(--muted)',
-        transition: 'all 0.15s',
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
-function ResultCell({
-  children,
-  delay,
-}: {
-  children: React.ReactNode
-  delay: number
-}) {
-  return (
-    <div
-      className={`animate-fade-up delay-${delay}`}
-      style={{
-        background: 'var(--panel)',
-        padding: 20,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 4,
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-function ResultLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        fontSize: 10,
-        letterSpacing: '0.25em',
-        textTransform: 'uppercase',
-        color: 'var(--muted)',
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-function ResultValue({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        fontFamily: 'var(--font-bebas), sans-serif',
-        fontSize: 48,
-        letterSpacing: '0.03em',
-        color: 'var(--text)',
-        lineHeight: 1,
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-function ResultSub({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-      {children}
-    </div>
+      {/* Stats chips */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+        {stats.map((s) => (
+          <span
+            key={s}
+            style={{
+              fontSize: 9,
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+              border: '1px solid var(--border)',
+              padding: '3px 7px',
+            }}
+          >
+            {s}
+          </span>
+        ))}
+      </div>
+    </Link>
   )
 }

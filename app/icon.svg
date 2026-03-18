@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Dark background square (tab icon needs a bg) -->
+  <rect width="32" height="32" rx="6" fill="#0d0d0d"/>
+  <!-- EKG line centered -->
+  <polyline
+    points="2,16 7,16 10,16 13,4 16,28 19,10 22,16 30,16"
+    fill="none"
+    stroke="#c8f135"
+    stroke-width="2"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
+</svg>
