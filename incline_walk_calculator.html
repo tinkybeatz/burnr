@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incline Walk Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --panel: #141414;
+    --border: #2a2a2a;
+    --accent: #c8f135;
+    --accent-dim: rgba(200, 241, 53, 0.12);
+    --text: #e8e8e8;
+    --muted: #555;
+    --red: #ff4d4d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px 60px;
+  }
+
+  /* Scanline grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.07) 2px,
+      rgba(0,0,0,0.07) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 10vw, 88px);
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    line-height: 0.9;
+    text-shadow: 0 0 40px rgba(200,241,53,0.3);
+  }
+
+  .subtitle {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .input-cell {
+    background: var(--panel);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .input-cell.full {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  input[type="number"] {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    width: 100%;
+    padding: 4px 0;
+    outline: none;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  input[type="number"]:focus {
+    border-bottom-color: var(--accent);
+  }
+
+  .unit {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 5px 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .toggle-btn.active {
+    background: var(--accent);
+    color: #0d0d0d;
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* Mode toggle for distance vs time */
+  .mode-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    background: var(--panel);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .mode-btn.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
+
+  /* Calculate button */
+  .calc-btn {
+    width: calc(100% - 40px);
+    margin: 20px;
+    padding: 16px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.15em;
+    background: var(--accent);
+    color: #0d0d0d;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .calc-btn:hover {
+    background: #d9ff3f;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(200,241,53,0.25);
+  }
+
+  .calc-btn:active { transform: translateY(0); }
+
+  /* Results */
+  .results {
+    width: 100%;
+    max-width: 520px;
+    margin-top: 1px;
+    display: none;
+  }
+
+  .results.visible { display: block; }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .result-cell {
+    background: var(--panel);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: fadeUp 0.3s ease forwards;
+    opacity: 0;
+  }
+
+  .result-cell:nth-child(1) { animation-delay: 0.05s; }
+  .result-cell:nth-child(2) { animation-delay: 0.1s; }
+  .result-cell:nth-child(3) { animation-delay: 0.15s; }
+  .result-cell:nth-child(4) { animation-delay: 0.2s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-cell.highlight {
+    background: var(--accent-dim);
+    border: 1px solid rgba(200,241,53,0.2);
+    grid-column: 1 / -1;
+  }
+
+  .result-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .result-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 0.03em;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .result-cell.highlight .result-value {
+    color: var(--accent);
+    font-size: 64px;
+    text-shadow: 0 0 30px rgba(200,241,53,0.4);
+  }
+
+  .result-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .disclaimer {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.05em;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>INCLINE<br>WALK</h1>
+  <p class="subtitle">Treadmill Calculator</p>
+</header>
+
+<div class="card">
+  <div class="section-label">// Body</div>
+
+  <div class="inputs-grid">
+    <div class="input-cell">
+      <label>Weight</label>
+      <div class="input-row">
+        <input type="number" id="weight" placeholder="75" min="30" max="300">
+        <span class="unit" id="weightUnit">kg</span>
+      </div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" onclick="setUnit('weight','kg',this)">KG</button>
+        <button class="toggle-btn" onclick="setUnit('weight','lbs',this)">LBS</button>
+      </div>
+    </div>
+
+    <div class="input-cell">
+      <label>Height</label>
+      <div class="input-row">
+        <input type="number" id="height" placeholder="175" min="100" max="250">
+        <span class="unit" id="heightUnit">cm</span>
+      </div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" onclick="setUnit('height','cm',this)">CM</button>
+        <button class="toggle-btn" onclick="setUnit('height','in',this)">IN</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">// Workout</div>
+
+  <div class="inputs-grid">
+    <div class="input-cell full">
+      <label>Incline</label>
+      <div class="input-row">
+        <input type="number" id="incline" placeholder="8" min="0" max="30" step="0.5">
+        <span class="unit">% grade</span>
+      </div>
+    </div>
+
+    <div class="input-cell full" style="padding: 0;">
+      <div class="mode-bar">
+        <button class="mode-btn active" id="modeDistBtn" onclick="setMode('distance')">By Distance</button>
+        <button class="mode-btn" id="modeTimeBtn" onclick="setMode('time')">By Time</button>
+      </div>
+    </div>
+
+    <div class="input-cell" id="distanceCell">
+      <label>Distance</label>
+      <div class="input-row">
+        <input type="number" id="distance" placeholder="3" min="0.1" max="100" step="0.1">
+        <span class="unit" id="distUnit">km</span>
+      </div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" onclick="setUnit('dist','km',this)">KM</button>
+        <button class="toggle-btn" onclick="setUnit('dist','mi',this)">MI</button>
+      </div>
+    </div>
+
+    <div class="input-cell" id="speedCell">
+      <label>Speed</label>
+      <div class="input-row">
+        <input type="number" id="speed" placeholder="5.5" min="0.1" max="50" step="0.1">
+        <span class="unit" id="speedUnit">km/h</span>
+      </div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" onclick="setUnit('speed','kmh',this)">KM/H</button>
+        <button class="toggle-btn" onclick="setUnit('speed','ms',this)">M/S</button>
+      </div>
+    </div>
+
+    <div class="input-cell full" id="timeCell" style="display:none;">
+      <label>Duration</label>
+      <div class="input-row">
+        <input type="number" id="timeMins" placeholder="45" min="1" max="600">
+        <span class="unit">min</span>
+      </div>
+    </div>
+
+    <div class="input-cell full" id="speedTimeCell" style="display:none;">
+      <label>Speed</label>
+      <div class="input-row">
+        <input type="number" id="speedTime" placeholder="5.5" min="0.1" max="50" step="0.1">
+        <span class="unit" id="speedTimeUnit">km/h</span>
+      </div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" onclick="setUnit('speedTime','kmh',this)">KM/H</button>
+        <button class="toggle-btn" onclick="setUnit('speedTime','ms',this)">M/S</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">CALCULATE</button>
+</div>
+
+<div class="results" id="results">
+  <div class="results-grid">
+    <div class="result-cell highlight">
+      <div class="result-label">Calories Burned</div>
+      <div class="result-value" id="outCalories">—</div>
+      <div class="result-sub">kcal (estimated)</div>
+    </div>
+    <div class="result-cell">
+      <div class="result-label">Steps</div>
+      <div class="result-value" id="outSteps">—</div>
+      <div class="result-sub">approx.</div>
+    </div>
+    <div class="result-cell">
+      <div class="result-label">Duration</div>
+      <div class="result-value" id="outDuration">—</div>
+      <div class="result-sub">min</div>
+    </div>
+    <div class="result-cell">
+      <div class="result-label">Speed</div>
+      <div class="result-value" id="outSpeed">—</div>
+      <div class="result-sub" id="outSpeedSub">km/h</div>
+    </div>
+    <div class="result-cell">
+      <div class="result-label">Distance</div>
+      <div class="result-value" id="outDistance">—</div>
+      <div class="result-sub" id="outDistanceSub">km</div>
+    </div>
+  </div>
+  <p class="disclaimer">
+    Estimates use MET values adjusted for incline and speed.<br>
+    Actual results vary by fitness level, terrain, and gait.
+  </p>
+</div>
+
+<script>
+  let weightUnit = 'kg';
+  let heightUnit = 'cm';
+  let distUnit   = 'km';
+  let speedUnit  = 'kmh';      // 'kmh' | 'ms'
+  let speedTimeUnit = 'kmh';
+  let mode       = 'distance';
+
+  function setUnit(type, val, btn) {
+    const parent = btn.closest('.toggle-row');
+    parent.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (type === 'weight') {
+      weightUnit = val;
+      document.getElementById('weightUnit').textContent = val;
+    }
+    if (type === 'height') {
+      heightUnit = val;
+      document.getElementById('heightUnit').textContent = val;
+    }
+    if (type === 'dist') {
+      distUnit = val;
+      document.getElementById('distUnit').textContent = val;
+    }
+    if (type === 'speed') {
+      speedUnit = val;
+      document.getElementById('speedUnit').textContent = val === 'kmh' ? 'km/h' : 'm/s';
+    }
+    if (type === 'speedTime') {
+      speedTimeUnit = val;
+      document.getElementById('speedTimeUnit').textContent = val === 'kmh' ? 'km/h' : 'm/s';
+    }
+  }
+
+  // Convert any speed input → km/h
+  function toKmh(val, unit) {
+    if (unit === 'ms')  return val * 3.6;
+    return val; // already km/h
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById('modeDistBtn').classList.toggle('active', m === 'distance');
+    document.getElementById('modeTimeBtn').classList.toggle('active', m === 'time');
+    document.getElementById('distanceCell').style.display  = m === 'distance' ? '' : 'none';
+    document.getElementById('speedCell').style.display     = m === 'distance' ? '' : 'none';
+    document.getElementById('timeCell').style.display      = m === 'time' ? '' : 'none';
+    document.getElementById('speedTimeCell').style.display = m === 'time' ? '' : 'none';
+  }
+
+  function calculate() {
+    let weightKg = parseFloat(document.getElementById('weight').value);
+    let heightCm = parseFloat(document.getElementById('height').value);
+    const incline = parseFloat(document.getElementById('incline').value) || 0;
+
+    if (!weightKg || !heightCm) { alert('Please enter weight and height.'); return; }
+
+    if (weightUnit === 'lbs') weightKg *= 0.453592;
+    if (heightUnit === 'in')  heightCm *= 2.54;
+
+    const inclineFactor = 1 - (incline * 0.004);
+    const strideLengthM = (0.413 * (heightCm / 100)) * inclineFactor;
+
+    let distanceKm, durationMin, speedKmh;
+
+    if (mode === 'distance') {
+      let dist = parseFloat(document.getElementById('distance').value);
+      let spd  = parseFloat(document.getElementById('speed').value);
+      if (!dist || !spd) { alert('Please enter distance and speed.'); return; }
+      if (distUnit === 'mi') dist *= 1.60934;
+      speedKmh   = toKmh(spd, speedUnit);
+      distanceKm = dist;
+      durationMin = (distanceKm / speedKmh) * 60;
+    } else {
+      durationMin = parseFloat(document.getElementById('timeMins').value);
+      let spd     = parseFloat(document.getElementById('speedTime').value);
+      if (!durationMin || !spd) { alert('Please enter duration and speed.'); return; }
+      speedKmh   = toKmh(spd, speedTimeUnit);
+      distanceKm = (speedKmh * durationMin) / 60;
+    }
+
+    const speedMmin = (speedKmh * 1000) / 60;
+    const metRaw = (speedMmin * 0.1 + (incline / 100) * speedMmin * 1.8 + 3.5) / 3.5;
+    const MET = Math.max(2.5, metRaw);
+
+    const calories = Math.round(MET * weightKg * (durationMin / 60));
+    const steps    = Math.round((distanceKm * 1000) / strideLengthM);
+
+    // Speed display: show in both km/h and m/s
+    const displayKmh = speedKmh.toFixed(1);
+    const displayMs  = (speedKmh / 3.6).toFixed(2);
+
+    document.getElementById('outCalories').textContent = calories.toLocaleString();
+    document.getElementById('outSteps').textContent    = steps.toLocaleString();
+    document.getElementById('outDuration').textContent = Math.round(durationMin);
+    document.getElementById('outSpeed').textContent    = displayKmh;
+    document.getElementById('outSpeedSub').textContent = `km/h  ·  ${displayMs} m/s`;
+
+    const displayDist = distUnit === 'mi'
+      ? (distanceKm / 1.60934).toFixed(2)
+      : distanceKm.toFixed(2);
+    document.getElementById('outDistance').textContent    = displayDist;
+    document.getElementById('outDistanceSub').textContent = distUnit;
+
+    const res = document.getElementById('results');
+    res.classList.remove('visible');
+    void res.offsetWidth;
+    res.classList.add('visible');
+  }
+</script>
+</body>
+</html>
