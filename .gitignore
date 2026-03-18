@@ -29,6 +29,7 @@ Thumbs.db
 *.swp
 *.swo
 
-# Claude Code
+# Claude Code % Memory
 .claude/
+memory/
 CLAUDE.md
