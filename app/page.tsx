@@ -5,7 +5,14 @@ import Link from 'next/link'
 
 const tools = [
   {
-    href: '/incline-walk',
+    href: '/treadmill',
+    tag: 'Calculator',
+    name: 'Treadmill',
+    description: 'Estimate calories burned and steps for flat treadmill runs or walks. Automatically switches between ACSM walking and running formulas based on speed.',
+    stats: ['Calories', 'Steps', 'Duration', 'Speed'],
+  },
+  {
+    href: '/treadmill-incline',
     tag: 'Calculator',
     name: 'Incline Walk',
     description: 'Estimate calories burned and steps taken during a treadmill incline walk. Supports distance or time mode.',
