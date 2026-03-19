@@ -65,6 +65,7 @@ export default function RootLayout({
             <Image src="/burnr-logo.svg" alt="burnr" width={80} height={24} priority />
           </Link>
           <nav style={{ display: 'flex', gap: 24 }}>
+            <NavLink href="/bmr">BMR & TDEE</NavLink>
             <NavLink href="/treadmill">Treadmill</NavLink>
             <NavLink href="/treadmill-incline">Incline</NavLink>
           </nav>

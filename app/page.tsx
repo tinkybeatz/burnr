@@ -5,6 +5,13 @@ import Link from 'next/link'
 
 const tools = [
   {
+    href: '/bmr',
+    tag: 'Calculator',
+    name: 'BMR & TDEE',
+    description: 'Calculate your Basal Metabolic Rate and Total Daily Energy Expenditure. Get calorie targets for maintenance, cut, and bulk.',
+    stats: ['BMR', 'TDEE', 'Cut', 'Bulk'],
+  },
+  {
     href: '/treadmill',
     tag: 'Calculator',
     name: 'Treadmill',
