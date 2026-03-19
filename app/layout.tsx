@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Bebas_Neue, DM_Mono } from 'next/font/google'
-import Link from 'next/link'
-import Image from 'next/image'
+import Nav from './components/Nav'
 import './globals.css'
 
 const bebasNeue = Bebas_Neue({
@@ -21,23 +20,6 @@ export const metadata: Metadata = {
   description: 'Simple, accurate fitness calculators. No accounts, no ads — just fast answers.',
 }
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      style={{
-        fontSize: 10,
-        letterSpacing: '0.25em',
-        textTransform: 'uppercase',
-        color: 'var(--muted)',
-        textDecoration: 'none',
-      }}
-    >
-      {children}
-    </Link>
-  )
-}
-
 export default function RootLayout({
   children,
 }: {
@@ -46,30 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bebasNeue.variable} ${dmMono.variable}`}>
       <body style={{ fontFamily: 'var(--font-dm-mono), monospace' }}>
-        {/* Header */}
-        <header
-          style={{
-            borderBottom: '1px solid var(--border)',
-            padding: '0 24px',
-            height: 52,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            position: 'sticky',
-            top: 0,
-            background: 'var(--bg)',
-            zIndex: 10,
-          }}
-        >
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-            <Image src="/burnr-logo.svg" alt="burnr" width={80} height={24} priority />
-          </Link>
-          <nav style={{ display: 'flex', gap: 24 }}>
-            <NavLink href="/bmr">BMR & TDEE</NavLink>
-            <NavLink href="/treadmill">Treadmill</NavLink>
-            <NavLink href="/treadmill-incline">Incline</NavLink>
-          </nav>
-        </header>
+        <Nav />
 
         {children}
 
