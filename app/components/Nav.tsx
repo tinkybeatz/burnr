@@ -18,10 +18,11 @@ export default function Nav() {
   return (
     <>
       <header
+        className="pt-safe"
         style={{
           borderBottom: '1px solid var(--border)',
           padding: '0 24px',
-          height: 52,
+          minHeight: 52,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -91,7 +92,7 @@ export default function Nav() {
         <div
           style={{
             position: 'fixed',
-            top: 52,
+            top: 'calc(52px + env(safe-area-inset-top))',
             left: 0,
             right: 0,
             background: 'var(--bg)',

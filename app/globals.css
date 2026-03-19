@@ -69,3 +69,7 @@ input[type='number'] {
 .delay-3 { animation-delay: 0.15s; }
 .delay-4 { animation-delay: 0.2s; }
 .delay-5 { animation-delay: 0.25s; }
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}

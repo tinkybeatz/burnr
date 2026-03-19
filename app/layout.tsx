@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Bebas_Neue, DM_Mono } from 'next/font/google'
 import Nav from './components/Nav'
 import './globals.css'
@@ -14,6 +14,12 @@ const dmMono = DM_Mono({
   subsets: ['latin'],
   variable: '--font-dm-mono',
 })
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
 
 export const metadata: Metadata = {
   title: 'Burnr — Fitness Calculators',
