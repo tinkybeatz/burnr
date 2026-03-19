@@ -24,6 +24,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Burnr — Fitness Calculators',
   description: 'Simple, accurate fitness calculators. No accounts, no ads — just fast answers.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+  },
 }
 
 export default function RootLayout({
@@ -36,7 +40,9 @@ export default function RootLayout({
       <body style={{ fontFamily: 'var(--font-dm-mono), monospace' }}>
         <Nav />
 
-        {children}
+        <div className="content-top-offset">
+          {children}
+        </div>
 
         {/* Footer */}
         <footer

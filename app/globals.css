@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  --sat: env(safe-area-inset-top, 0px);
   --bg: #0d0d0d;
   --panel: #141414;
   --border: #2a2a2a;
@@ -16,6 +17,10 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html {
+  background: var(--bg);
 }
 
 body {
@@ -70,6 +75,15 @@ input[type='number'] {
 .delay-4 { animation-delay: 0.2s; }
 .delay-5 { animation-delay: 0.25s; }
 
-.pt-safe {
-  padding-top: env(safe-area-inset-top);
+.nav-header {
+  height: calc(52px + var(--sat));
+  padding-top: var(--sat);
+}
+
+.content-top-offset {
+  padding-top: calc(52px + var(--sat));
+}
+
+.mobile-dropdown-top {
+  top: calc(52px + var(--sat));
 }
