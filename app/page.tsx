@@ -14,8 +14,8 @@ const tools = [
   {
     href: '/treadmill-incline',
     tag: 'Calculator',
-    name: 'Incline Walk',
-    description: 'Estimate calories burned and steps taken during a treadmill incline walk. Supports distance or time mode.',
+    name: 'Incline Treadmill',
+    description: 'Estimate calories burned and steps for incline treadmill sessions. Supports walking and running with ACSM 2021 formulas.',
     stats: ['Calories', 'Steps', 'Duration', 'Speed'],
   },
 ]

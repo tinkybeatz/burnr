@@ -8,6 +8,8 @@ type DistUnit = 'km' | 'mi'
 type SpeedUnit = 'kmh' | 'ms'
 type Mode = 'distance' | 'time'
 
+const WALK_THRESHOLD_KMH = 8
+
 interface Results {
   calories: number
   steps: number
@@ -16,6 +18,7 @@ interface Results {
   speedMs: number
   displayDist: string
   distUnit: DistUnit
+  gait: 'WALKING' | 'RUNNING'
 }
 
 function toKmh(val: number, unit: SpeedUnit): number {
@@ -42,6 +45,19 @@ export default function Page() {
   const [timeMins, setTimeMins] = useState('')
   const [speedTime, setSpeedTime] = useState('')
 
+  // Live gait indicator — derived from whatever speed field is active
+  const activeSpeedRaw = mode === 'distance' ? speed : speedTime
+  const activeSpeedUnit = mode === 'distance' ? speedUnit : speedTimeUnit
+  const previewKmh = parseFloat(activeSpeedRaw)
+    ? toKmh(parseFloat(activeSpeedRaw), activeSpeedUnit)
+    : null
+  const gaitMode: 'WALKING' | 'RUNNING' | null =
+    previewKmh !== null
+      ? previewKmh < WALK_THRESHOLD_KMH
+        ? 'WALKING'
+        : 'RUNNING'
+      : null
+
   const calculate = useCallback(() => {
     setError(null)
     let weightKg = parseFloat(weight)
@@ -55,9 +71,6 @@ export default function Page() {
 
     if (weightUnit === 'lbs') weightKg *= 0.453592
     if (heightUnit === 'in') heightCm *= 2.54
-
-    const inclineFactor = 1 - inclineVal * 0.004
-    const strideLengthM = 0.413 * (heightCm / 100) * inclineFactor
 
     let distanceKm: number
     let durationMin: number
@@ -85,13 +98,27 @@ export default function Page() {
       distanceKm = (speedKmh * durationMin) / 60
     }
 
+    // ACSM 2021 metabolic equations with incline
     const speedMmin = (speedKmh * 1000) / 60
-    const metRaw =
-      (speedMmin * 0.1 + (inclineVal / 100) * speedMmin * 1.8 + 3.5) / 3.5
-    const MET = Math.max(2.5, metRaw)
-
+    const grade = inclineVal / 100
+    const vo2 =
+      speedKmh < WALK_THRESHOLD_KMH
+        ? 0.1 * speedMmin + 1.8 * speedMmin * grade + 3.5   // walking
+        : 0.2 * speedMmin + 0.9 * speedMmin * grade + 3.5   // running
+    const MET = Math.max(2.5, vo2 / 3.5)
     const calories = Math.round(MET * weightKg * (durationMin / 60))
-    const steps = Math.round((distanceKm * 1000) / strideLengthM)
+
+    // Lindberg (2003) step length, incline-adjusted
+    const heightM = heightCm / 100
+    const inclineFactor = 1 - inclineVal * 0.004
+    const stepLengthM =
+      speedKmh < WALK_THRESHOLD_KMH
+        ? 0.413 * heightM * inclineFactor   // walking
+        : 0.72 * heightM * inclineFactor    // running
+    const steps = Math.round((distanceKm * 1000) / stepLengthM)
+
+    const gait: 'WALKING' | 'RUNNING' =
+      speedKmh < WALK_THRESHOLD_KMH ? 'WALKING' : 'RUNNING'
 
     const displayDist =
       distUnit === 'mi'
@@ -106,6 +133,7 @@ export default function Page() {
       speedMs: speedKmh / 3.6,
       displayDist,
       distUnit,
+      gait,
     })
     setCalcKey((k) => k + 1)
   }, [
@@ -130,7 +158,7 @@ export default function Page() {
             textShadow: '0 0 40px rgba(200,241,53,0.3)',
           }}
         >
-          INCLINE<br />WALK
+          INCLINE<br />TREADMILL
         </h1>
         <p
           style={{
@@ -141,7 +169,7 @@ export default function Page() {
             marginTop: 8,
           }}
         >
-          Treadmill Calculator
+          Incline Speed Calculator
         </p>
       </header>
 
@@ -179,18 +207,8 @@ export default function Page() {
               <UnitSpan>{weightUnit}</UnitSpan>
             </div>
             <ToggleRow>
-              <ToggleBtn
-                active={weightUnit === 'kg'}
-                onClick={() => setWeightUnit('kg')}
-              >
-                KG
-              </ToggleBtn>
-              <ToggleBtn
-                active={weightUnit === 'lbs'}
-                onClick={() => setWeightUnit('lbs')}
-              >
-                LBS
-              </ToggleBtn>
+              <ToggleBtn active={weightUnit === 'kg'} onClick={() => setWeightUnit('kg')}>KG</ToggleBtn>
+              <ToggleBtn active={weightUnit === 'lbs'} onClick={() => setWeightUnit('lbs')}>LBS</ToggleBtn>
             </ToggleRow>
           </InputCell>
 
@@ -208,24 +226,14 @@ export default function Page() {
               <UnitSpan>{heightUnit}</UnitSpan>
             </div>
             <ToggleRow>
-              <ToggleBtn
-                active={heightUnit === 'cm'}
-                onClick={() => setHeightUnit('cm')}
-              >
-                CM
-              </ToggleBtn>
-              <ToggleBtn
-                active={heightUnit === 'in'}
-                onClick={() => setHeightUnit('in')}
-              >
-                IN
-              </ToggleBtn>
+              <ToggleBtn active={heightUnit === 'cm'} onClick={() => setHeightUnit('cm')}>CM</ToggleBtn>
+              <ToggleBtn active={heightUnit === 'in'} onClick={() => setHeightUnit('in')}>IN</ToggleBtn>
             </ToggleRow>
           </InputCell>
         </div>
 
         {/* Workout section */}
-        <SectionLabel>// Workout</SectionLabel>
+        <SectionLabel gaitBadge={gaitMode}>// Workout</SectionLabel>
         <div
           style={{
             display: 'grid',
@@ -277,18 +285,8 @@ export default function Page() {
                   <UnitSpan>{distUnit}</UnitSpan>
                 </div>
                 <ToggleRow>
-                  <ToggleBtn
-                    active={distUnit === 'km'}
-                    onClick={() => setDistUnit('km')}
-                  >
-                    KM
-                  </ToggleBtn>
-                  <ToggleBtn
-                    active={distUnit === 'mi'}
-                    onClick={() => setDistUnit('mi')}
-                  >
-                    MI
-                  </ToggleBtn>
+                  <ToggleBtn active={distUnit === 'km'} onClick={() => setDistUnit('km')}>KM</ToggleBtn>
+                  <ToggleBtn active={distUnit === 'mi'} onClick={() => setDistUnit('mi')}>MI</ToggleBtn>
                 </ToggleRow>
               </InputCell>
 
@@ -306,18 +304,8 @@ export default function Page() {
                   <UnitSpan>{speedUnit === 'kmh' ? 'km/h' : 'm/s'}</UnitSpan>
                 </div>
                 <ToggleRow>
-                  <ToggleBtn
-                    active={speedUnit === 'kmh'}
-                    onClick={() => setSpeedUnit('kmh')}
-                  >
-                    KM/H
-                  </ToggleBtn>
-                  <ToggleBtn
-                    active={speedUnit === 'ms'}
-                    onClick={() => setSpeedUnit('ms')}
-                  >
-                    M/S
-                  </ToggleBtn>
+                  <ToggleBtn active={speedUnit === 'kmh'} onClick={() => setSpeedUnit('kmh')}>KM/H</ToggleBtn>
+                  <ToggleBtn active={speedUnit === 'ms'} onClick={() => setSpeedUnit('ms')}>M/S</ToggleBtn>
                 </ToggleRow>
               </InputCell>
             </>
@@ -354,18 +342,8 @@ export default function Page() {
                   <UnitSpan>{speedTimeUnit === 'kmh' ? 'km/h' : 'm/s'}</UnitSpan>
                 </div>
                 <ToggleRow>
-                  <ToggleBtn
-                    active={speedTimeUnit === 'kmh'}
-                    onClick={() => setSpeedTimeUnit('kmh')}
-                  >
-                    KM/H
-                  </ToggleBtn>
-                  <ToggleBtn
-                    active={speedTimeUnit === 'ms'}
-                    onClick={() => setSpeedTimeUnit('ms')}
-                  >
-                    M/S
-                  </ToggleBtn>
+                  <ToggleBtn active={speedTimeUnit === 'kmh'} onClick={() => setSpeedTimeUnit('kmh')}>KM/H</ToggleBtn>
+                  <ToggleBtn active={speedTimeUnit === 'ms'} onClick={() => setSpeedTimeUnit('ms')}>M/S</ToggleBtn>
                 </ToggleRow>
               </InputCell>
             </>
@@ -454,7 +432,24 @@ export default function Page() {
                 gap: 4,
               }}
             >
-              <ResultLabel>Calories Burned</ResultLabel>
+              <div className="flex items-center gap-2" style={{ justifyContent: 'space-between' }}>
+                <ResultLabel>Calories Burned</ResultLabel>
+                <span
+                  style={{
+                    fontSize: 9,
+                    letterSpacing: '0.25em',
+                    textTransform: 'uppercase',
+                    color: results.gait === 'RUNNING' ? 'var(--accent)' : 'var(--muted)',
+                    border: results.gait === 'RUNNING'
+                      ? '1px solid rgba(200,241,53,0.3)'
+                      : '1px solid var(--border)',
+                    background: results.gait === 'RUNNING' ? 'var(--accent-dim)' : 'transparent',
+                    padding: '2px 7px',
+                  }}
+                >
+                  {results.gait}
+                </span>
+              </div>
               <div
                 style={{
                   fontFamily: 'var(--font-bebas), sans-serif',
@@ -509,7 +504,7 @@ export default function Page() {
               border: '1px solid var(--border)',
             }}
           >
-            Estimates use MET values adjusted for incline and speed.<br />
+            Estimates use ACSM 2021 metabolic equations (Lindberg 2003 stride length).<br />
             Actual results vary by fitness level, terrain, and gait.
           </p>
         </div>
@@ -520,7 +515,13 @@ export default function Page() {
 
 /* ─── Small reusable components ─────────────────────────────────────────── */
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({
+  children,
+  gaitBadge,
+}: {
+  children: React.ReactNode
+  gaitBadge?: 'WALKING' | 'RUNNING' | null
+}) {
   return (
     <div
       style={{
@@ -530,9 +531,29 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
         color: 'var(--muted)',
         padding: '14px 20px 10px',
         borderBottom: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
       }}
     >
       {children}
+      {gaitBadge && (
+        <span
+          style={{
+            fontSize: 9,
+            letterSpacing: '0.25em',
+            color: gaitBadge === 'RUNNING' ? 'var(--accent)' : 'var(--muted)',
+            border: gaitBadge === 'RUNNING'
+              ? '1px solid rgba(200,241,53,0.3)'
+              : '1px solid var(--border)',
+            background: gaitBadge === 'RUNNING' ? 'var(--accent-dim)' : 'transparent',
+            padding: '2px 7px',
+            transition: 'all 0.2s',
+          }}
+        >
+          {gaitBadge}
+        </span>
+      )}
     </div>
   )
 }
