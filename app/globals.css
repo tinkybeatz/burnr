@@ -76,14 +76,14 @@ input[type='number'] {
 .delay-5 { animation-delay: 0.25s; }
 
 .nav-header {
-  height: calc(52px + var(--sat));
-  padding-top: var(--sat);
+  height: calc(52px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .content-top-offset {
-  padding-top: calc(52px + var(--sat));
+  padding-top: calc(52px + env(safe-area-inset-top, 0px));
 }
 
 .mobile-dropdown-top {
-  top: calc(52px + var(--sat));
+  top: calc(52px + env(safe-area-inset-top, 0px));
 }

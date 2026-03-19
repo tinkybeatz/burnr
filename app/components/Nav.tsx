@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -14,29 +14,6 @@ const links = [
 export default function Nav() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-
-  useEffect(() => {
-    // Probe element: position:fixed with top:env(safe-area-inset-top).
-    // getBoundingClientRect().top returns the actual computed inset in px,
-    // bypassing the WebKit timing bug where env() isn't set at CSS parse time.
-    const probe = document.createElement('div')
-    probe.style.cssText =
-      'position:fixed;top:env(safe-area-inset-top,0px);left:0;width:1px;height:1px;pointer-events:none;visibility:hidden;'
-    document.body.appendChild(probe)
-
-    const apply = () => {
-      const inset = probe.getBoundingClientRect().top
-      document.documentElement.style.setProperty('--sat', `${inset}px`)
-    }
-
-    apply()
-    const raf = requestAnimationFrame(apply)
-
-    return () => {
-      cancelAnimationFrame(raf)
-      document.body.removeChild(probe)
-    }
-  }, [])
 
   return (
     <>
