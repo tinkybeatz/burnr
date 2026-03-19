@@ -18,11 +18,12 @@ export default function Nav() {
   return (
     <>
       <header
-        className="pt-safe"
         style={{
           borderBottom: '1px solid var(--border)',
-          padding: '0 24px',
-          minHeight: 52,
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingLeft: 24,
+          paddingRight: 24,
+          height: 'calc(52px + env(safe-area-inset-top))',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
